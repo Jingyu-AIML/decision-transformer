@@ -1,0 +1,22 @@
+# Hopper-v2 medium dataset config
+# Reference numbers from Decision Transformer paper
+
+env_name: "hopper-medium-v2"
+
+# Model
+state_dim: 11
+act_dim: 3
+hidden_size: 128
+n_layer: 3
+n_head: 1
+dropout: 0.1
+context_len: 20        # K in the paper
+
+# Training
+batch_size: 64
+n_epochs: 10
+lr: 1.0e-4
+weight_decay: 1.0e-4
+
+# Evaluation
+target_return: 3600    # target cumulative return at inference time
