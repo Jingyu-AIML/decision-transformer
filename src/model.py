@@ -41,7 +41,7 @@ class DecisionTransformer(nn.Module):
             dropout=dropout,
             batch_first=True,
         )
-        self.transformer = nn.TransformerEncoder(encoder_layer, num_layers=n_layer)
+        self.transformer = nn.TransformerEncoder(encoder_layer, num_layers=n_layer, enable_nested_tensor=False)
 
         # Action prediction head
         self.predict_action = nn.Sequential(

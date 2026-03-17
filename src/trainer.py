@@ -46,3 +46,24 @@ class Trainer:
         for batch in dataloader:
             total_loss += self.train_step(batch)
         return total_loss / len(dataloader)
+
+    def train_steps(self, dataloader: DataLoader, max_steps: int, log_interval: int = 100):
+        """Train for a fixed number of gradient steps, cycling through the dataloader."""
+        self.model.train()
+        loader_iter = iter(dataloader)
+        total_loss = 0.0
+
+        for step in range(1, max_steps + 1):
+            try:
+                batch = next(loader_iter)
+            except StopIteration:
+                loader_iter = iter(dataloader)
+                batch = next(loader_iter)
+
+            loss = self.train_step(batch)
+            total_loss += loss
+
+            if step % log_interval == 0:
+                avg = total_loss / log_interval
+                print(f"  Step {step:>6d}/{max_steps} | Loss: {avg:.4f}")
+                total_loss = 0.0

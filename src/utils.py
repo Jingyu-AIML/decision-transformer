@@ -2,9 +2,65 @@
 Utility functions: data loading, trajectory processing, evaluation helpers.
 """
 
+from __future__ import annotations
+
 import numpy as np
 import torch
 from torch.utils.data import Dataset
+
+
+def parse_d4rl_dataset(dataset: dict) -> list[dict]:
+    """
+    Convert a raw d4rl dataset dict into a list of trajectory dicts.
+
+    d4rl stores everything as flat arrays of length N (total transitions).
+    Episode boundaries are indicated by ``terminals`` (true done) or
+    ``timeouts`` (episode cut off due to time limit — the agent did not
+    actually reach a terminal state).
+
+    Args:
+        dataset: dict returned by ``env.get_dataset()``, with keys
+                 'observations', 'actions', 'rewards', 'terminals',
+                 and optionally 'timeouts'.
+
+    Returns:
+        List of dicts, each with keys:
+            'observations'  – np.ndarray (T, state_dim)
+            'actions'       – np.ndarray (T, act_dim)
+            'rewards'       – np.ndarray (T,)
+            'terminals'     – np.ndarray (T,) bool
+    """
+    obs     = dataset["observations"]
+    acts    = dataset["actions"]
+    rews    = dataset["rewards"]
+    terms   = dataset["terminals"].astype(bool)
+    # timeouts mark end-of-episode but are NOT true terminal states
+    timeouts = dataset.get("timeouts", np.zeros_like(terms, dtype=bool)).astype(bool)
+
+    episode_ends = np.where(terms | timeouts)[0]
+
+    trajectories = []
+    start = 0
+    for end in episode_ends:
+        end = int(end) + 1          # slice is exclusive
+        trajectories.append({
+            "observations": obs[start:end],
+            "actions":      acts[start:end],
+            "rewards":      rews[start:end],
+            "terminals":    terms[start:end],
+        })
+        start = end
+
+    # Include any trailing transitions not closed by a terminal/timeout
+    if start < len(obs):
+        trajectories.append({
+            "observations": obs[start:],
+            "actions":      acts[start:],
+            "rewards":      rews[start:],
+            "terminals":    terms[start:],
+        })
+
+    return trajectories
 
 
 class TrajectoryDataset(Dataset):
@@ -96,7 +152,47 @@ class TrajectoryDataset(Dataset):
         )
 
 
-def normalize_states(states: np.ndarray):
-    mean = states.mean(axis=0)
-    std = states.std(axis=0) + 1e-8
-    return (states - mean) / std, mean, std
+def parse_minari_dataset(dataset) -> list[dict]:
+    """
+    Convert a Minari dataset into a list of trajectory dicts.
+
+    Minari stores T+1 observations per episode (includes the final next-obs),
+    so we drop the last observation to align with actions/rewards.
+
+    Args:
+        dataset: MinariDataset returned by ``minari.load_dataset()``.
+
+    Returns:
+        List of dicts with keys 'observations', 'actions', 'rewards', 'terminals'.
+    """
+    trajectories = []
+    for episode in dataset.iterate_episodes():
+        obs = episode.observations
+        # Some envs return obs as a dict — flatten to array
+        if isinstance(obs, dict):
+            obs = np.concatenate([np.atleast_2d(v) for v in obs.values()], axis=-1)
+        obs = np.array(obs[:-1], dtype=np.float32)   # drop final next-obs
+
+        trajectories.append({
+            "observations": obs,
+            "actions":      np.array(episode.actions, dtype=np.float32),
+            "rewards":      np.array(episode.rewards, dtype=np.float32),
+            "terminals":    np.array(episode.terminations, dtype=bool),
+        })
+    return trajectories
+
+
+def compute_state_stats(trajectories: list[dict]) -> tuple[np.ndarray, np.ndarray]:
+    """Compute mean and std over all states in the dataset."""
+    all_obs = np.concatenate([t["observations"] for t in trajectories], axis=0)
+    mean = all_obs.mean(axis=0)
+    std  = all_obs.std(axis=0) + 1e-8
+    return mean, std
+
+
+def normalize_states(trajectories: list[dict], mean: np.ndarray, std: np.ndarray) -> list[dict]:
+    """Return new trajectory list with observations normalized in-place."""
+    normalized = []
+    for t in trajectories:
+        normalized.append({**t, "observations": (t["observations"] - mean) / std})
+    return normalized
