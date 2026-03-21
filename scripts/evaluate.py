@@ -83,9 +83,9 @@ def main():
     ).to(device)
     model.load_state_dict(torch.load(args.checkpoint, map_location=device))
 
-    # TODO: load state_mean, state_std from saved stats
-    state_mean = np.zeros(cfg["state_dim"])
-    state_std = np.ones(cfg["state_dim"])
+    checkpoint_dir = os.path.dirname(args.checkpoint)
+    state_mean = np.load(os.path.join(checkpoint_dir, "state_mean.npy"))
+    state_std = np.load(os.path.join(checkpoint_dir, "state_std.npy"))
 
     import gymnasium as gym
     env = gym.make(cfg["env_name"])

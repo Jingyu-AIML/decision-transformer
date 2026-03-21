@@ -1,7 +1,7 @@
 # Hopper-v2 medium dataset config
 # Reference numbers from Decision Transformer paper
 
-env_name: "hopper-medium-v2"        # gymnasium env (for evaluation)
+env_name: "Hopper-v5"               # gymnasium env (for evaluation)
 dataset_id: "mujoco/hopper/medium-v0" # Minari dataset ID
 
 # Model
