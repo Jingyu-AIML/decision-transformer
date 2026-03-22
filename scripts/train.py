@@ -31,6 +31,7 @@ def main():
     parser.add_argument("--config", type=str, default="configs/hopper_medium.yaml")
     parser.add_argument("--smoke", action="store_true", help="Run 2 batches to verify pipeline")
     parser.add_argument("--max-steps", type=int, default=None, help="Train for N gradient steps (overrides n_epochs)")
+    parser.add_argument("--resume", type=str, default=None, help="Path to checkpoint to resume from")
     args = parser.parse_args()
 
     cfg = load_config(args.config)
@@ -95,6 +96,10 @@ def main():
     optimizer = torch.optim.AdamW(
         model.parameters(), lr=cfg["lr"], weight_decay=cfg["weight_decay"]
     )
+
+    if args.resume:
+        model.load_state_dict(torch.load(args.resume, map_location=device, weights_only=True))
+        print(f"Resumed from {args.resume}")
 
     trainer = Trainer(model, optimizer, device=device)
     max_steps = args.max_steps or cfg.get("max_steps")
