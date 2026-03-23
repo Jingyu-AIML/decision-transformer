@@ -16,7 +16,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from src.model import DecisionTransformer
 
 
-def evaluate(model, env, target_return: float, context_len: int, device: str, state_mean, state_std):
+def evaluate(model, env, target_return: float, context_len: int, device: str, state_mean, state_std, rtg_scale: float = 1.0):
     model.eval()
     state_dim = env.observation_space.shape[0]
     act_dim = env.action_space.shape[0]
@@ -39,7 +39,7 @@ def evaluate(model, env, target_return: float, context_len: int, device: str, st
         timesteps = timesteps.roll(-1, dims=1)
 
         states[0, -1] = torch.tensor(obs, dtype=torch.float32)
-        returns_to_go[0, -1] = target_return - episode_return
+        returns_to_go[0, -1] = (target_return - episode_return) / rtg_scale
         timesteps[0, -1] = t
 
         with torch.no_grad():
@@ -90,9 +90,11 @@ def main():
     import gymnasium as gym
     env = gym.make(cfg["env_name"])
 
+    rtg_scale = cfg.get("rtg_scale", 1.0)
+
     returns = []
     for ep in range(args.n_eval):
-        ret = evaluate(model, env, target_return, cfg["context_len"], device, state_mean, state_std)
+        ret = evaluate(model, env, target_return, cfg["context_len"], device, state_mean, state_std, rtg_scale)
         returns.append(ret)
         print(f"Episode {ep+1}: return = {ret:.2f}")
 

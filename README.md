@@ -28,8 +28,17 @@ pytest tests/
 ## Training
 
 ```bash
-python scripts/train.py --config configs/hopper_medium.yaml
+# Single run
+python scripts/train.py --config configs/hopper_medium.yaml --seed 0
+
+# Override steps (default: 100K from config)
+python scripts/train.py --config configs/hopper_medium.yaml --seed 0 --max-steps 100000
+
+# Resume from checkpoint
+python scripts/train.py --config configs/hopper_medium.yaml --seed 0 --resume checkpoints/hopper_medium_seed0/best_model.pt
 ```
+
+Checkpoints are saved to `checkpoints/{config_stem}_seed{N}/` and include `best_model.pt`, `state_mean.npy`, and `state_std.npy`.
 
 ### Example training run (Hopper-Medium-v2, 10 epochs)
 
@@ -54,11 +63,13 @@ Config: `batch_size=64`, `lr=1e-4`, `hidden_size=128`, `n_layer=3`, `context_len
 
 ```bash
 python scripts/evaluate.py \
-    --checkpoint checkpoints/best_model.pt \
+    --checkpoint checkpoints/hopper_medium_seed0/best_model.pt \
     --config configs/hopper_medium.yaml \
     --target_return 3600 \
     --n_eval 10
 ```
+
+`state_mean.npy` and `state_std.npy` are loaded automatically from the checkpoint directory.
 
 ### Example evaluation run (target_return=3600, n_eval=10)
 
@@ -95,8 +106,7 @@ cd /workspace
 git clone <your-repo-url>
 cd decision-transformer
 pip install "minari[hf]" gymnasium[mujoco] mujoco numpy pyyaml
-mkdir -p checkpoints
-python scripts/train.py --config configs/hopper_medium.yaml
+python scripts/train.py --config configs/hopper_medium.yaml --seed 0
 ```
 
 ### Download checkpoints to local machine
@@ -116,3 +126,10 @@ IP and port are shown in the RunPod pod's Connect tab.
 - [x] Minari dataset integration (Hopper-Medium-v2)
 - [x] Full training run (Hopper-medium, best loss 0.0485)
 - [x] Evaluation (mean return 2225.80 over 10 episodes)
+- [x] RTG scaling (`rtg_scale: 1000`, paper §A.1)
+- [x] Seed control (`--seed` arg, all RNGs seeded)
+- [x] LR warmup scheduler (linear over `warmup_steps: 10000`)
+- [x] Per-run checkpoint dirs (`checkpoints/{config}_seed{N}/`)
+- [x] Step-based training (`max_steps: 100000` in config)
+- [ ] Multi-env configs (HalfCheetah, Walker2d)
+- [ ] Normalized score reporting in evaluation

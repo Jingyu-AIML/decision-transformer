@@ -14,11 +14,13 @@ class Trainer:
         optimizer: torch.optim.Optimizer,
         batch_size: int = 64,
         device: str = "cpu",
+        scheduler=None,
     ):
         self.model = model
         self.optimizer = optimizer
         self.batch_size = batch_size
         self.device = device
+        self.scheduler = scheduler
         self.loss_fn = nn.MSELoss()
 
     def train_step(self, batch):
@@ -37,6 +39,8 @@ class Trainer:
         loss.backward()
         torch.nn.utils.clip_grad_norm_(self.model.parameters(), max_norm=0.25)
         self.optimizer.step()
+        if self.scheduler is not None:
+            self.scheduler.step()
 
         return loss.item()
 

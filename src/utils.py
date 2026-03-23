@@ -69,7 +69,7 @@ class TrajectoryDataset(Dataset):
     suitable for Decision Transformer training.
     """
 
-    def __init__(self, trajectories, context_len: int, state_dim: int, act_dim: int):
+    def __init__(self, trajectories, context_len: int, state_dim: int, act_dim: int, rtg_scale: float = 1.0):
         """
         Args:
             trajectories: list of dicts with keys:
@@ -77,10 +77,13 @@ class TrajectoryDataset(Dataset):
             context_len:  K, the number of timesteps per sample
             state_dim:    dimensionality of state space
             act_dim:      dimensionality of action space
+            rtg_scale:    divide RTG values by this before feeding to the model
+                          (paper §A.1: scale=1000 for most MuJoCo envs)
         """
         self.context_len = context_len
         self.state_dim = state_dim
         self.act_dim = act_dim
+        self.rtg_scale = rtg_scale
 
         # Compute returns-to-go for each trajectory
         self.states, self.actions, self.returns_to_go, self.timesteps, self.traj_lens = (
@@ -92,7 +95,7 @@ class TrajectoryDataset(Dataset):
             acts = np.array(traj["actions"], dtype=np.float32)
             rews = np.array(traj["rewards"], dtype=np.float32)
 
-            rtg = self._compute_rtg(rews)
+            rtg = self._compute_rtg(rews) / self.rtg_scale
 
             self.states.append(obs)
             self.actions.append(acts)
