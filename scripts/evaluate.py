@@ -92,13 +92,22 @@ def main():
 
     rtg_scale = cfg.get("rtg_scale", 1.0)
 
+    ref_min = cfg.get("ref_min_score", None)
+    ref_max = cfg.get("ref_max_score", None)
+
     returns = []
     for ep in range(args.n_eval):
         ret = evaluate(model, env, target_return, cfg["context_len"], device, state_mean, state_std, rtg_scale)
         returns.append(ret)
         print(f"Episode {ep+1}: return = {ret:.2f}")
 
-    print(f"\nMean return: {np.mean(returns):.2f} ± {np.std(returns):.2f}")
+    mean_return = np.mean(returns)
+    std_return = np.std(returns)
+    print(f"\nMean return: {mean_return:.2f} ± {std_return:.2f}")
+
+    if ref_min is not None and ref_max is not None:
+        norm_score = (mean_return - ref_min) / (ref_max - ref_min) * 100
+        print(f"Normalized score: {norm_score:.1f}")
 
 
 if __name__ == "__main__":

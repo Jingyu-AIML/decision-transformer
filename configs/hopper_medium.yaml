@@ -24,3 +24,7 @@ warmup_steps: 10000   # linear LR warmup (paper §A.1)
 # Evaluation
 target_return: 3600    # target cumulative return at inference time (raw, pre-scale)
 rtg_scale: 1000        # divide RTG by this before feeding to model (paper §A.1)
+
+# D4RL normalized score references (Hopper-v2)
+ref_min_score: 20.272305
+ref_max_score: 3234.3

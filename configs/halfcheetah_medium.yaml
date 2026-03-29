@@ -1,0 +1,29 @@
+# HalfCheetah-v2 medium dataset config
+
+env_name: "HalfCheetah-v5"
+dataset_id: "mujoco/halfcheetah/medium-v0"
+
+# Model
+state_dim: 17
+act_dim: 6
+hidden_size: 128
+n_layer: 3
+n_head: 1
+dropout: 0.1
+context_len: 20
+
+# Training
+batch_size: 64
+max_steps: 100000
+n_epochs: 10
+lr: 1.0e-4
+weight_decay: 1.0e-4
+warmup_steps: 10000
+
+# Evaluation
+target_return: 6000
+rtg_scale: 1000
+
+# D4RL normalized score references (HalfCheetah-v2)
+ref_min_score: -280.178953
+ref_max_score: 12135.0
