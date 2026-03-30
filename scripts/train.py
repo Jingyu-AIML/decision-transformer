@@ -70,7 +70,7 @@ def main():
     else:
         import minari
 
-        dataset = minari.load_dataset(cfg["dataset_id"], download=True)
+        dataset = minari.load_dataset(cfg["dataset_id"], download=False)
         trajectories = parse_minari_dataset(dataset)
         print(f"Loaded {len(trajectories)} trajectories")
 
